@@ -7,6 +7,8 @@ import { generateSlides } from '../../services/slide-generator';
 // Placeholder story components - we will expand these later
 import { IntroStory } from '../Stories/IntroStory';
 import { StatBigNumberStory } from '../Stories/StatBigNumberStory';
+import { ListStory } from '../Stories/ListStory';
+import { MessageStory } from '../Stories/MessageStory';
 
 interface PresentationPageProps {
     data: ReviewData;
@@ -178,6 +180,10 @@ const renderStory = (slide: SlideData) => {
             return <IntroStory data={slide.data} />;
         case 'stat-big-number':
             return <StatBigNumberStory data={slide.data} />;
+        case 'list':
+            return <ListStory data={slide.data} />;
+        case 'message':
+            return <MessageStory data={slide.data} />;
         // Add more cases as we build them
         default:
             return (

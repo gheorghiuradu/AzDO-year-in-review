@@ -15,6 +15,9 @@ export interface ReviewData {
         pr: PRStats;
         general: GeneralStats;
     };
+    config?: {
+        enabledStoryIds: string[];
+    };
 }
 
 export interface RepoStats {

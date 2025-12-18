@@ -12,8 +12,19 @@ export const StatBigNumberStory: React.FC<{ data: any }> = ({ data }) => {
         // Delay start slightly
         setTimeout(() => {
             spring.set(value);
+
+            if (data.confetti) {
+                import('canvas-confetti').then((confetti) => {
+                    confetti.default({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#8b5cf6', '#ec4899', '#06b6d4', '#ffffff']
+                    });
+                });
+            }
         }, 300);
-    }, [value, spring]);
+    }, [value, spring, data.confetti]);
 
     return (
         <div className="flex flex-col items-center justify-center text-center p-8 max-w-4xl">
