@@ -1,0 +1,49 @@
+{
+    "manifestVersion": 1,
+    "id": "year-in-review",
+    "version": "0.1.0",
+    "name": "Year in Review",
+    "description": "A Spotify Wrapped-style review of your team's year in Azure DevOps",
+    "publisher": "Fabrikam",
+    "targets": [
+        {
+            "id": "Microsoft.VisualStudio.Services"
+        }
+    ],
+    "icons": {
+        "default": "images/icon.png"
+    },
+    "categories": [
+        "Plan and track"
+    ],
+    "scopes": [
+        "vso.code",
+        "vso.build",
+        "vso.work",
+        "vso.wiki"
+    ],
+    "contributions": [
+        {
+            "id": "year-in-review-hub",
+            "type": "ms.vss-web.hub",
+            "targets": [
+                "ms.vss-web.project-hub-groups-overview"
+            ],
+            "properties": {
+                "name": "Year in Review",
+                "uri": "dist/index.html",
+                "icon": "asset://images/icon.png"
+            }
+        }
+    ],
+    "files": [
+        {
+            "path": "dist",
+            "addressable": true
+        },
+        {
+             "path": "images",
+             "addressable": true
+        }
+    ]
+}
