@@ -1,10 +1,10 @@
 {
     "manifestVersion": 1,
-    "id": "year-in-review",
-    "version": "0.1.0",
-    "name": "Year in Review",
+    "id": "year-in-review-dev",
+    "version": "0.1.5",
+    "name": "Year in Review-Dev",
     "description": "A Spotify Wrapped-style review of your team's year in Azure DevOps",
-    "publisher": "Fabrikam",
+    "publisher": "RaduGheorghiu",
     "targets": [
         {
             "id": "Microsoft.VisualStudio.Services"
@@ -14,7 +14,9 @@
         "default": "images/icon.png"
     },
     "categories": [
-        "Plan and track"
+        "Azure Repos",
+        "Azure Boards",
+        "Azure Pipelines"
     ],
     "scopes": [
         "vso.code",
@@ -27,7 +29,7 @@
             "id": "year-in-review-hub",
             "type": "ms.vss-web.hub",
             "targets": [
-                "ms.vss-web.project-hub-groups-overview"
+                "ms.vss-work-web.work-hub-group"
             ],
             "properties": {
                 "name": "Year in Review",
@@ -42,8 +44,8 @@
             "addressable": true
         },
         {
-             "path": "images",
-             "addressable": true
+            "path": "images",
+            "addressable": true
         }
     ]
 }

@@ -101,7 +101,7 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
     const categories = Object.keys(groupedStories) as StoryCategory[];
 
     return (
-        <div className="flex-center full-screen flex-col overflow-y-auto custom-scrollbar bg-black/80">
+        <div className="pt-150 flex-center full-screen flex-col overflow-y-auto custom-scrollbar bg-black/80">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -110,14 +110,16 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
                 style={{ padding: '2.5rem' }}
             >
                 <div className="text-center mb-8">
-                    <motion.img
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
-                        src="/images/icon.png"
-                        alt="Logo"
-                        style={{ width: '80px', height: '80px', marginBottom: '1rem', borderRadius: '16px' }}
-                    />
+                    <div className="flex-center">
+                        <motion.img
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
+                            src="/images/icon.png"
+                            alt="Logo"
+                            style={{ width: '80px', height: '80px', marginBottom: '1rem', borderRadius: '16px', }}
+                        />
+                    </div>
                     <h1 className="text-gradient" style={{ fontSize: '3rem', margin: '0', lineHeight: 1.2 }}>Year in Review</h1>
                     <p style={{ color: 'var(--color-text-secondary)', fontSize: '1.2rem' }}>
                         Customize your team's {year} celebration!
