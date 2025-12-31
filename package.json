@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "package:dev": "npx tfx-cli extension create --overrides-file configs/dev.json --rev-version",
+    "publish:dev": "npx tfx-cli extension publish --overrides-file configs/dev.json",
+    "package:release": "npx tfx-cli extension create --overrides-file configs/release.json --rev-version",
+    "publish:release": "npx tfx-cli extension publish --overrides-file configs/release.json"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

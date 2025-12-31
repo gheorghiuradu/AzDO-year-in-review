@@ -115,7 +115,7 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
                             transition={{ type: 'spring', stiffness: 260, damping: 20, delay: 0.2 }}
-                            src="/images/icon.png"
+                            src="icon.png"
                             alt="Logo"
                             style={{ width: '80px', height: '80px', marginBottom: '1rem', borderRadius: '16px', }}
                         />

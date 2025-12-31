@@ -10,7 +10,7 @@ export const IntroStory: React.FC<{ data: any }> = ({ data }) => {
                 transition={{ type: "spring", stiffness: 260, damping: 20 }}
                 className="mb-8"
             >
-                <img src="/images/icon.png" alt="Logo" className="w-32 h-32 rounded-3xl shadow-2xl" style={{ width: '120px', height: '120px', borderRadius: '24px' }} />
+                <img src="icon.png" alt="Logo" className="w-32 h-32 rounded-3xl shadow-2xl" style={{ width: '120px', height: '120px', borderRadius: '24px' }} />
             </motion.div>
 
             <motion.h1

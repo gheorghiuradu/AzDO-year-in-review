@@ -1,0 +1,7 @@
+{
+    "id": "year-in-review-dev",
+    "version": "0.1.16",
+    "public": false,
+    "baseUri": "https://localhost:5173",
+    "name": "Year in Review-Dev"
+}
