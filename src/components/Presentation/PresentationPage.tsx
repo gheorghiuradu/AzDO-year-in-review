@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import type { ReviewData, SlideData } from '../../types';
+import type { ReviewData, SlideData } from '../../models/types';
 import { generateSlides } from '../../services/slide-generator';
 
 // Placeholder story components - we will expand these later
@@ -14,8 +14,6 @@ interface PresentationPageProps {
     data: ReviewData;
     onExit: () => void;
 }
-
-
 
 export const PresentationPage: React.FC<PresentationPageProps> = ({ data, onExit }) => {
     const [slides, setSlides] = useState<SlideData[]>([]);

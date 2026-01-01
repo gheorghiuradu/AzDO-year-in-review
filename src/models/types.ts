@@ -91,3 +91,4 @@ export interface SlideData {
     duration?: number; // seconds
     theme?: SlideTheme;
 }
+

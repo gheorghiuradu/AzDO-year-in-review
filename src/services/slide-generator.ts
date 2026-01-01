@@ -1,4 +1,4 @@
-import type { ReviewData, SlideData } from '../types';
+import type { ReviewData, SlideData } from '../models/types';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 

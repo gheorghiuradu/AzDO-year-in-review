@@ -2,7 +2,7 @@ import { useState } from 'react';
 import './index.css';
 import { ConfigPage } from './components/Configuration/ConfigPage';
 import { PresentationPage } from './components/Presentation/PresentationPage';
-import type { ReviewData } from './types';
+import type { ReviewData } from './models/types';
 
 // Type definition for the view state
 type AppView = 'config' | 'presentation';

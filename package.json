@@ -9,9 +9,9 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "package:dev": "npx tfx-cli extension create --overrides-file configs/dev.json --rev-version",
-    "publish:dev": "npx tfx-cli extension publish --overrides-file configs/dev.json",
+    "publish:dev": "source .env && npx tfx-cli extension publish --overrides-file configs/dev.json --token $PAT",
     "package:release": "npx tfx-cli extension create --overrides-file configs/release.json --rev-version",
-    "publish:release": "npx tfx-cli extension publish --overrides-file configs/release.json"
+    "publish:release": "source .env && npx tfx-cli extension publish --overrides-file configs/release.json --token $PAT"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

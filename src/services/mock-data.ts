@@ -1,4 +1,4 @@
-import type { ReviewData } from '../types';
+import type { ReviewData } from '../models/types';
 
 export const generateMockData = (year: number): ReviewData => {
     return {
