@@ -1,7 +1,7 @@
 import * as SDK from 'azure-devops-extension-sdk';
 import { getClient } from 'azure-devops-extension-api';
 import { GitRestClient, GitVersionType, PullRequestStatus } from 'azure-devops-extension-api/Git';
-import type { GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
+import type { GitVersionDescriptor } from 'azure-devops-extension-api/Git';
 import { BuildRestClient, BuildResult } from 'azure-devops-extension-api/Build';
 import { WorkItemTrackingRestClient } from 'azure-devops-extension-api/WorkItemTracking';
 import { WikiRestClient } from 'azure-devops-extension-api/Wiki';
@@ -11,16 +11,19 @@ export class AdoService {
     async initADO(): Promise<void> {
         if (window.self !== window.top || !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
             try {
+                console.log('Initializing Azure DevOps SDK...');
                 await SDK.init();
                 await SDK.ready();
+                console.log('Azure DevOps SDK initialized successfully.');
+
             } catch (error) {
                 console.error('Failed to initialize Azure DevOps SDK:', error);
             }
         }
     };
 
-    getProject(): Promise<{ id: string, name: string } | undefined> {
-        return Promise.resolve(SDK.getWebContext().project);
+    getProject(): { id: string, name: string } | undefined {
+        return SDK.getWebContext().project;
     };
 
     async getReviewData(year: number): Promise<ReviewData> {
@@ -60,9 +63,9 @@ export class AdoService {
         };
     }
 
-    private async getRepoStats(project: string, year: number): Promise<RepoStats> {
+    private async getRepoStats(projectId: string, year: number): Promise<RepoStats> {
         const client = getClient(GitRestClient);
-        const repos = await client.getRepositories(project);
+        const repos = await client.getRepositories(projectId);
 
         const fromDate = new Date(year, 0, 1).toISOString();
         const toDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
@@ -89,7 +92,7 @@ export class AdoService {
                     $top: 1000
                 } as any; // Cast to any to avoid strict type checks on optional fields vs required
 
-                const commits = await client.getCommits(repo.id, searchCriteria, project);
+                const commits = await client.getCommits(repo.id, searchCriteria, projectId);
 
                 if (!commits || commits.length === 0) return;
 
@@ -235,8 +238,8 @@ export class AdoService {
         const wiql = {
             query: `
                 SELECT [System.Id], [System.WorkItemType], [System.IterationPath]
-                FROM WorkItems 
-                WHERE [System.TeamProject] = '${project}' 
+                FROM WorkItems
+                WHERE [System.TeamProject] = '${project}'
                 AND [System.State] IN ('Closed', 'Completed', 'Done', 'Resolved')
                 AND [Microsoft.VSTS.Common.ClosedDate] >= '${fromDate}'
                 AND [Microsoft.VSTS.Common.ClosedDate] <= '${toDate}'
@@ -259,8 +262,8 @@ export class AdoService {
             const bugWiql = {
                 query: `
                     SELECT [System.Id]
-                    FROM WorkItems 
-                    WHERE [System.TeamProject] = '${project}' 
+                    FROM WorkItems
+                    WHERE [System.TeamProject] = '${project}'
                     AND [System.WorkItemType] = 'Bug'
                     AND [System.State] IN ('Closed', 'Completed', 'Done', 'Resolved')
                     AND [Microsoft.VSTS.Common.ClosedDate] >= '${fromDate}'
@@ -270,7 +273,7 @@ export class AdoService {
             const bugResults = await client.queryByWiql(bugWiql);
 
             // For active sprint, just return a placeholder or try to find most active iteration path from a sample?
-            // Since we can't easily aggregate fields via WIQL without fetching details, we will skip "Active Sprint" logic 
+            // Since we can't easily aggregate fields via WIQL without fetching details, we will skip "Active Sprint" logic
             // and just put the most common iteration if we fetch details.
             // Fetching 1000 items details is heavy.
 
@@ -366,6 +369,8 @@ export class AdoService {
             const wiki = wikis[0];
             // Listing all pages might be heavy if deep structure. 'pagesBatch'??
             // We'll skip deep traversal for now and just use a placeholder or minimal check.
+            console.log(wiki);
+            console.log(year);
 
             return {
                 pagesCreated: 5, // Placeholder

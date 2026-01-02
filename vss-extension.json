@@ -1,7 +1,7 @@
 {
     "manifestVersion": 1,
     "id": "year-in-review",
-    "version": "0.1.3",
+    "version": "0.1.5",
     "name": "Year in Review",
     "description": "A Spotify Wrapped-style review of your team's year in Azure DevOps",
     "publisher": "RaduGheorghiu",
@@ -33,15 +33,14 @@
             ],
             "properties": {
                 "name": "Year in Review",
-                "uri": "dist/index.html",
-                "icon": "asset://dist/icon.png"
+                "uri": "index.html",
+                "icon": "icon.png"
             }
         }
     ],
     "files": [
         {
-            "path": "dist",
-            "addressable": true
+            "path": "dist"
         }
     ]
 }

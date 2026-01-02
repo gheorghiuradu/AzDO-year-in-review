@@ -10,14 +10,20 @@ interface ConfigPageProps {
 }
 
 export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
-    const years = [new Date().getFullYear(), new Date().getFullYear() - 1, new Date().getFullYear() - 2, new Date().getFullYear() - 3];
+    const years: number[] = [];
+    for (let i = 0; i < 10; i++) {
+        years.push(new Date().getFullYear() - i);
+    }
     const [year, setYear] = useState(years[0]);
     const [loading, setLoading] = useState(false);
     const [stories, setStories] = useState<StoryConfig[]>(AVAILABLE_STORIES);
     const adoService = new AdoService();
+    let project: { id: string; name: string } | undefined;
 
     useEffect(() => {
-        adoService.initADO();
+        adoService.initADO().then(() => {
+            project = adoService.getProject();
+        });
     }, []);
 
     const toggleStory = (id: string) => {
@@ -36,10 +42,9 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
 
     const handleGenerate = async () => {
         setLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        const data = generateMockData(year);
+        //const data = generateMockData(year);
+        const data = await adoService.getReviewData(year);
+        console.log('Fetched review data:', data);
         // Attach config
         const finalData = {
             ...data,
