@@ -31,11 +31,11 @@ export const ListStory: React.FC<{ data: { items: ListItem[], title?: string } }
                         className="glass-card p-4 flex items-center gap-4 rounded-xl"
                         style={{ padding: '1rem', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)' }}
                     >
-                        {index < 3 && (
-                            <div className="text-2xl font-bold w-8 text-center" style={{ color: index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : '#b45309' }}>
-                                #{index + 1}
-                            </div>
-                        )}
+
+                        <div className="text-2xl font-bold w-8 text-center" style={{ color: index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : index == 2 ? '#b45309' : '#58a0f7ff' }}>
+                            #{index + 1}
+                        </div>
+
 
                         {item.image && (
                             <img src={item.image} alt={item.label} className="w-10 h-10 rounded-full bg-gray-700" style={{ width: '40px', height: '40px', borderRadius: '50%' }} />

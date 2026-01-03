@@ -6,7 +6,6 @@ export const StatBigNumberStory: React.FC<{ data: any }> = ({ data }) => {
 
     // Counter animation
     const spring = useSpring(0, { stiffness: 50, damping: 20 });
-    const displayValue = useTransform(spring, (current) => Math.floor(current));
 
     useEffect(() => {
         // Delay start slightly
@@ -41,7 +40,7 @@ export const StatBigNumberStory: React.FC<{ data: any }> = ({ data }) => {
                 className="text-8xl font-black text-white mb-8"
                 style={{ fontSize: '8rem', textShadow: '0 4px 30px rgba(0,0,0,0.5)' }}
             >
-                <motion.span>{displayValue}</motion.span>
+                <motion.span>{value}</motion.span>
             </motion.div>
 
             <motion.div

@@ -1,7 +1,7 @@
 import * as SDK from 'azure-devops-extension-sdk';
 import { getClient } from 'azure-devops-extension-api';
 import { GitRestClient, GitVersionType, PullRequestStatus } from 'azure-devops-extension-api/Git';
-import type { GitVersionDescriptor } from 'azure-devops-extension-api/Git';
+import type { GitCommitRef, GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
 import { BuildRestClient, BuildResult } from 'azure-devops-extension-api/Build';
 import { WorkItemTrackingRestClient } from 'azure-devops-extension-api/WorkItemTracking';
 import { WikiRestClient } from 'azure-devops-extension-api/Wiki';
@@ -11,10 +11,8 @@ export class AdoService {
     async initADO(): Promise<void> {
         if (window.self !== window.top || !['localhost', '127.0.0.1'].includes(window.location.hostname)) {
             try {
-                console.log('Initializing Azure DevOps SDK...');
                 await SDK.init();
                 await SDK.ready();
-                console.log('Azure DevOps SDK initialized successfully.');
 
             } catch (error) {
                 console.error('Failed to initialize Azure DevOps SDK:', error);
@@ -35,7 +33,8 @@ export class AdoService {
         const projectId = project.id;
         const projectName = project.name;
 
-        // Parallelize fetching data
+
+        //Parallelize fetching data
         const [repoStats, pipelineStats, workItemStats, prStats, wikiStats] = await Promise.all([
             this.getRepoStats(projectId, year),
             this.getPipelineStats(projectId, year),
@@ -80,26 +79,38 @@ export class AdoService {
 
         // Limit to first 20 repos to avoid performance bottlenecks
         const activeRepos = repos.slice(0, 20);
-
         const commitPromises = activeRepos.map(async (repo) => {
             if (!repo.id) return;
             try {
+                const pageSize = 1000;
+                let continueFetch = true;
+                let skip = 0;
+                const allCommits: GitCommitRef[] = [];
                 const searchCriteria = {
                     fromDate,
                     toDate,
                     itemVersion: { version: 'main', versionType: GitVersionType.Branch } as GitVersionDescriptor,
                     includeUserImageUrl: true,
-                    $top: 1000
-                } as any; // Cast to any to avoid strict type checks on optional fields vs required
+                } as GitQueryCommitsCriteria;
 
-                const commits = await client.getCommits(repo.id, searchCriteria, projectId);
+                while (continueFetch) {
+                    searchCriteria.$top = pageSize;
+                    searchCriteria.$skip = skip;
+                    const commits = await client.getCommits(repo.id, searchCriteria, projectId);
 
-                if (!commits || commits.length === 0) return;
+                    if (!commits || commits.length === 0) return;
+                    allCommits.push(...commits);
+                    if (commits.length < pageSize) {
+                        continueFetch = false;
+                    } else {
+                        skip += pageSize;
+                    }
+                }
 
-                repoCommitCounts.set(repo.name, commits.length);
-                totalCommits += commits.length;
+                repoCommitCounts.set(repo.name, allCommits.length);
+                totalCommits += allCommits.length;
 
-                for (const commit of commits) {
+                for (const commit of allCommits) {
                     if (commit.author && commit.author.name) {
                         const name = commit.author.name;
                         // @ts-ignore: imageUrl exists on some responses
@@ -110,8 +121,8 @@ export class AdoService {
 
                     if (commit.changeCounts) {
                         const changes = commit.changeCounts as any;
-                        linesAdded += (changes['Add'] || 0) + (changes['Edit'] || 0);
-                        linesDeleted += (changes['Delete'] || 0);
+                        linesAdded += (changes[1] || 0) + (changes[2] || 0);
+                        linesDeleted += (changes[16] || 0);
                     }
 
                     if (commit.author?.date) {
@@ -369,8 +380,6 @@ export class AdoService {
             const wiki = wikis[0];
             // Listing all pages might be heavy if deep structure. 'pagesBatch'??
             // We'll skip deep traversal for now and just use a placeholder or minimal check.
-            console.log(wiki);
-            console.log(year);
 
             return {
                 pagesCreated: 5, // Placeholder
