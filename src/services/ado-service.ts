@@ -2,10 +2,11 @@ import * as SDK from 'azure-devops-extension-sdk';
 import { getClient } from 'azure-devops-extension-api';
 import { GitRestClient, GitVersionType, PullRequestStatus } from 'azure-devops-extension-api/Git';
 import type { GitCommitRef, GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
-import { BuildRestClient, BuildResult } from 'azure-devops-extension-api/Build';
+import { Build, BuildRestClient, BuildResult } from 'azure-devops-extension-api/Build';
 import { WorkItemTrackingRestClient } from 'azure-devops-extension-api/WorkItemTracking';
 import { WikiRestClient } from 'azure-devops-extension-api/Wiki';
 import type { ReviewData, RepoStats, PipelineStats, WorkItemStats, PRStats, WikiStats, GeneralStats, UserStat } from '../models/types';
+import { PagedList } from 'azure-devops-extension-api/WebApi';
 
 export class AdoService {
     async initADO(): Promise<void> {
@@ -175,22 +176,39 @@ export class AdoService {
         const minTime = new Date(year, 0, 1);
         const maxTime = new Date(year, 11, 31, 23, 59, 59);
 
-        const builds = await client.getBuilds(
-            project,
-            undefined, undefined, undefined,
-            minTime, maxTime,
-            undefined, undefined, undefined, undefined, undefined, undefined,
-            1000
-        );
+        const pageSize = 1000;
+        let continuationToken = '';
+        const allBuilds: Build[] = [];
+        let continueFetch = true;
 
-        const totalRuns = builds.length;
+        while (continueFetch) {
+            const builds = await client.getBuilds(
+                project,
+                undefined, undefined, undefined,
+                minTime, maxTime,
+                undefined, undefined, undefined, undefined, undefined, undefined,
+                pageSize,
+                continuationToken
+            );
+            if (builds.length === 0) {
+                break;
+            }
+            allBuilds.push(...builds);
+            if (builds.length < pageSize) {
+                continueFetch = false;
+            } else {
+                continuationToken = builds[builds.length - 1].id?.toString() || '';
+            }
+        }
+
+        const totalRuns = allBuilds.length;
         let successCount = 0;
         const buildsByDay = new Map<string, number>();
         const buildsByDef = new Map<string, number>();
         let longestRun = { name: '', durationMinutes: 0 };
         let fastestRun = { name: '', durationMinutes: 999999 };
 
-        for (const build of builds) {
+        for (const build of allBuilds) {
             if (build.result === BuildResult.Succeeded) {
                 successCount++;
             }
@@ -230,6 +248,9 @@ export class AdoService {
             .sort((a, b) => b.count - a.count)
             .slice(0, 5);
 
+        longestRun.durationMinutes = Math.round(longestRun.durationMinutes);
+        fastestRun.durationMinutes = parseFloat(fastestRun.durationMinutes.toFixed(2));
+
         return {
             totalRuns,
             busiestDay: busiestDay.count ? busiestDay : { date: new Date().toISOString().split('T')[0], count: 0 },
@@ -242,15 +263,15 @@ export class AdoService {
 
     private async getWorkItemStats(project: string, year: number): Promise<WorkItemStats> {
         const client = getClient(WorkItemTrackingRestClient);
-        const fromDate = new Date(year, 0, 1).toISOString();
-        const toDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
+        const fromDate = new Date(year, 0, 1).toDateString();
+        const toDate = new Date(year, 11, 31).toDateString();
 
         // Query for completed items
         const wiql = {
             query: `
                 SELECT [System.Id], [System.WorkItemType], [System.IterationPath]
                 FROM WorkItems
-                WHERE [System.TeamProject] = '${project}'
+                WHERE [System.TeamProject] = 'School Project'
                 AND [System.State] IN ('Closed', 'Completed', 'Done', 'Resolved')
                 AND [Microsoft.VSTS.Common.ClosedDate] >= '${fromDate}'
                 AND [Microsoft.VSTS.Common.ClosedDate] <= '${toDate}'
