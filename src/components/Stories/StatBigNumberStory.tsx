@@ -6,7 +6,6 @@ export const StatBigNumberStory: React.FC<{ data: any }> = ({ data }) => {
 
     // Counter animation
     const spring = useSpring(0, { stiffness: 50, damping: 20 });
-    console.log('Animating to value:', value);
     const displayValue = useTransform(spring, (current) => Math.round(current));
 
     useEffect(() => {

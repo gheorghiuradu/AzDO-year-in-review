@@ -1,12 +1,11 @@
 import * as SDK from 'azure-devops-extension-sdk';
 import { getClient } from 'azure-devops-extension-api';
-import { GitRestClient, GitVersionType, PullRequestStatus } from 'azure-devops-extension-api/Git';
-import type { GitCommitRef, GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
+import { GitRestClient, GitVersionType, PullRequestStatus, PullRequestTimeRangeType, VersionControlRecursionType } from 'azure-devops-extension-api/Git';
+import type { GitCommitRef, GitPullRequest, GitPullRequestSearchCriteria, GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
 import { Build, BuildRestClient, BuildResult } from 'azure-devops-extension-api/Build';
 import { WorkItemTrackingRestClient } from 'azure-devops-extension-api/WorkItemTracking';
-import { WikiRestClient } from 'azure-devops-extension-api/Wiki';
+import { WikiPageDetail, WikiRestClient } from 'azure-devops-extension-api/Wiki';
 import type { ReviewData, RepoStats, PipelineStats, WorkItemStats, PRStats, WikiStats, GeneralStats, UserStat } from '../models/types';
-import { PagedList } from 'azure-devops-extension-api/WebApi';
 
 export class AdoService {
     async initADO(): Promise<void> {
@@ -39,7 +38,7 @@ export class AdoService {
         const [repoStats, pipelineStats, workItemStats, prStats, wikiStats] = await Promise.all([
             this.getRepoStats(projectId, year),
             this.getPipelineStats(projectId, year),
-            this.getWorkItemStats(projectId, year),
+            this.getWorkItemStats(projectName, year),
             this.getPrStats(projectId, year),
             this.getWikiStats(projectId, year)
         ]);
@@ -261,59 +260,78 @@ export class AdoService {
         };
     }
 
-    private async getWorkItemStats(project: string, year: number): Promise<WorkItemStats> {
+    private async getWorkItemStats(projectName: string, year: number): Promise<WorkItemStats> {
         const client = getClient(WorkItemTrackingRestClient);
-        const fromDate = new Date(year, 0, 1).toDateString();
-        const toDate = new Date(year, 11, 31).toDateString();
+        const fromDate = new Date(year, 0, 1).toISOString();
+        const toDate = new Date(year, 11, 31, 23, 59, 59).toISOString();
 
-        // Query for completed items
         const wiql = {
             query: `
-                SELECT [System.Id], [System.WorkItemType], [System.IterationPath]
-                FROM WorkItems
-                WHERE [System.TeamProject] = 'School Project'
-                AND [System.State] IN ('Closed', 'Completed', 'Done', 'Resolved')
-                AND [Microsoft.VSTS.Common.ClosedDate] >= '${fromDate}'
-                AND [Microsoft.VSTS.Common.ClosedDate] <= '${toDate}'
-            `
+            SELECT [System.Id]
+            FROM WorkItems
+            WHERE [System.TeamProject] = '${projectName}'
+            AND [System.State] IN ('Closed', 'Completed', 'Done', 'Resolved')
+            AND [Microsoft.VSTS.Common.ClosedDate] >= '${fromDate}'
+            AND [Microsoft.VSTS.Common.ClosedDate] <= '${toDate}'
+        `
         };
 
         try {
-            const results = await client.queryByWiql(wiql);
-            const workItems = results.workItems || [];
+            const results = await client.queryByWiql(wiql, projectName, undefined, true);
+            const workItemRefs = results.workItems || [];
 
-            // Note: queryByWiql only returns references (id, url). We need to fetch details for more info if needed.
-            // But we can get IDs and just count for basic stats.
-            // If we want type breakdown, we assume the query filtered correctly, but to group by type we'd need fields.
-            // queryByWiql doesn't return fields values in the list response usually.
-            // However, we can just assume the count is "completed".
+            if (workItemRefs.length === 0) {
+                return { completed: 0, bugsSquashed: 0, activeSprint: { name: 'Unknown', completedCount: 0 }, activeBacklogItems: [] };
+            }
 
-            // To differentiate bugs vs others, we might need a separate query or fetch details.
-            // Let's do a separate query for bugs to be accurate.
+            // Batch fetch with only needed fields (max 200 per request)
+            const ids = workItemRefs.map(wi => wi.id);
+            const fields = ['System.WorkItemType', 'System.IterationPath'];
+            const batchSize = 200;
 
-            const bugWiql = {
-                query: `
-                    SELECT [System.Id]
-                    FROM WorkItems
-                    WHERE [System.TeamProject] = '${project}'
-                    AND [System.WorkItemType] = 'Bug'
-                    AND [System.State] IN ('Closed', 'Completed', 'Done', 'Resolved')
-                    AND [Microsoft.VSTS.Common.ClosedDate] >= '${fromDate}'
-                    AND [Microsoft.VSTS.Common.ClosedDate] <= '${toDate}'
-                `
-            };
-            const bugResults = await client.queryByWiql(bugWiql);
+            // Build all batch promises
+            const batchPromises: Promise<any[]>[] = [];
+            for (let i = 0; i < ids.length; i += batchSize) {
+                const batchIds = ids.slice(i, i + batchSize);
+                batchPromises.push(client.getWorkItems(batchIds, projectName, fields));
+            }
 
-            // For active sprint, just return a placeholder or try to find most active iteration path from a sample?
-            // Since we can't easily aggregate fields via WIQL without fetching details, we will skip "Active Sprint" logic
-            // and just put the most common iteration if we fetch details.
-            // Fetching 1000 items details is heavy.
+            // Execute in parallel with concurrency limit
+            const allWorkItems: any[] = [];
+            const concurrencyLimit = 5;
+            for (let i = 0; i < batchPromises.length; i += concurrencyLimit) {
+                const batch = batchPromises.slice(i, i + concurrencyLimit);
+                const results = await Promise.all(batch);
+                results.forEach(items => allWorkItems.push(...items.filter(Boolean)));
+            }
+
+            // Aggregate stats
+            let bugsSquashed = 0;
+            const iterationCounts = new Map<string, number>();
+
+            for (const item of allWorkItems) {
+                const type = item.fields?.['System.WorkItemType'];
+                const iteration = item.fields?.['System.IterationPath'];
+
+                if (type === 'Bug') bugsSquashed++;
+                if (iteration) {
+                    iterationCounts.set(iteration, (iterationCounts.get(iteration) || 0) + 1);
+                }
+            }
+
+            // Find most active sprint
+            let activeSprint = { name: 'Unknown', completedCount: 0 };
+            for (const [name, count] of iterationCounts) {
+                if (count > activeSprint.completedCount || activeSprint.completedCount === 0) {
+                    activeSprint = { name, completedCount: count };
+                }
+            }
 
             return {
-                completed: workItems.length,
-                bugsSquashed: bugResults.workItems?.length || 0,
-                activeSprint: { name: 'Yearly Summary', completedCount: workItems.length }, // Placeholder
-                activeBacklogItems: [] // Keeping empty as it requires fetching active items/comments which is expensive
+                completed: allWorkItems.length,
+                bugsSquashed,
+                activeSprint,
+                activeBacklogItems: []
             };
 
         } catch (e) {
@@ -326,23 +344,38 @@ export class AdoService {
         const client = getClient(GitRestClient);
         const minTime = new Date(year, 0, 1);
         const maxTime = new Date(year, 11, 31, 23, 59, 59);
+        const pageSize = 500;
+        const allPRs: GitPullRequest[] = [];
+        let continueFetch = true;
 
-        // Fetch completed PRs
-        const searchCriteria = {
-            status: PullRequestStatus.Completed,
-            $top: 500
-            // Note: filtering by date range in criteria is not directly supported in all API versions for *completion* date
-            // We'll filter client side.
-        } as any;
+        while (continueFetch) {
+            const prs = await client.getPullRequestsByProject(
+                project,
+                {
+                    status: PullRequestStatus.Completed,
+                    maxTime: maxTime.toISOString(),
+                    minTime: minTime.toISOString(),
+                    queryTimeRangeType: PullRequestTimeRangeType.Closed,
+                    $top: pageSize,
+                    $skip: allPRs.length
+                } as any
+            );
 
-        const prs = await client.getPullRequestsByProject(project, searchCriteria);
+            if (prs.length === 0) {
+                break;
+            }
+            allPRs.push(...prs);
+            if (prs.length < pageSize) {
+                continueFetch = false;
+            }
+        }
 
         let merged = 0;
         const reviewers = new Map<string, { count: number, imageUrl?: string }>();
-        let fastestMerge = { title: '', durationHours: 99999 };
-        let longestMerge = { title: '', durationHours: 0 };
+        let fastestMerge = { title: '', durationMinutes: 99999 };
+        let longestMerge = { title: '', durationMinutes: 0 };
 
-        for (const pr of prs) {
+        for (const pr of allPRs) {
             if (pr.closedDate) {
                 const closeDate = new Date(pr.closedDate);
                 if (closeDate >= minTime && closeDate <= maxTime) {
@@ -361,19 +394,21 @@ export class AdoService {
                     // Duration
                     if (pr.creationDate) {
                         const createDate = new Date(pr.creationDate);
-                        const durationHours = (closeDate.getTime() - createDate.getTime()) / (1000 * 60 * 60);
+                        const durationMinutes = (closeDate.getTime() - createDate.getTime()) / (1000 * 60);
 
-                        if (durationHours > longestMerge.durationHours) {
-                            longestMerge = { title: pr.title || 'Untitled', durationHours };
+                        if (durationMinutes > longestMerge.durationMinutes) {
+                            longestMerge = { title: pr.title || 'Untitled', durationMinutes };
                         }
-                        if (durationHours < fastestMerge.durationHours && durationHours > 0) {
-                            fastestMerge = { title: pr.title || 'Untitled', durationHours };
+                        if (durationMinutes < fastestMerge.durationMinutes && durationMinutes > 0) {
+                            fastestMerge = { title: pr.title || 'Untitled', durationMinutes };
                         }
                     }
                 }
             }
         }
 
+        fastestMerge.durationMinutes = parseFloat(fastestMerge.durationMinutes.toFixed(2));
+        longestMerge.durationMinutes = Math.round(longestMerge.durationMinutes);
         const sortedReviewers = [...reviewers.entries()]
             .map(([displayName, stats]) => ({ displayName, count: stats.count, imageUrl: stats.imageUrl }))
             .sort((a, b) => b.count - a.count);
@@ -383,30 +418,66 @@ export class AdoService {
         return {
             merged,
             topReviewer,
-            discussionCount: merged * 3, // Mock estimation: avg 3 comments per PR
-            fastestMerge: fastestMerge.durationHours < 99999 ? fastestMerge : { title: 'None', durationHours: 0 },
-            longestMerge: longestMerge.title ? longestMerge : { title: 'None', durationHours: 0 }
+            discussionCount: merged, // Mock estimation: avg 3 comments per PR
+            fastestMerge: fastestMerge.durationMinutes < 99999 ? fastestMerge : { title: 'None', durationMinutes: 0 },
+            longestMerge: longestMerge.title ? longestMerge : { title: 'None', durationMinutes: 0 }
         };
     }
 
     private async getWikiStats(project: string, year: number): Promise<WikiStats> {
         const client = getClient(WikiRestClient);
+        const result: WikiStats = { pagesCreated: 0, topPages: [], topAuthors: [] };
         try {
             const wikis = await client.getAllWikis(project);
             if (!wikis || wikis.length === 0) {
-                return { pagesCreated: 0, topPages: [], topAuthors: [] };
+                return result;
             }
 
-            // Just check the first wiki
-            const wiki = wikis[0];
-            // Listing all pages might be heavy if deep structure. 'pagesBatch'??
-            // We'll skip deep traversal for now and just use a placeholder or minimal check.
+            for (const wiki of wikis) {
+                const pageSize = 100;
+                let continuationToken: string | null = null;
+                const allPages: WikiPageDetail[] = [];
+                let continueFetch = true;
+                try {
+                    while (continueFetch) {
+                        const request: any = continuationToken ? {
+                            continuationToken,
+                            pageviewsForDays: 30,
+                            top: pageSize,
+                        } : { top: pageSize, pageviewsForDays: 30 };
+                        const pages = await client.getPagesBatch(request, project, wiki.id)
 
-            return {
-                pagesCreated: 5, // Placeholder
-                topPages: [{ title: 'Home', views: 100 }],
-                topAuthors: []
-            };
+                        if (pages.length === 0) {
+                            break;
+                        }
+                        allPages.push(...pages);
+                        if (pages.length < pageSize) {
+                            continueFetch = false;
+                        } else {
+                            continuationToken = pages.continuationToken;
+                        }
+                    }
+                } catch (e) {
+                    // Ignore errors fetching pages
+                }
+
+                console.log(`Fetched ${allPages.length} pages for wiki ${wiki.name}`);
+                const topPages: { title: string; views: number }[] = [];
+                const fromDate = new Date(year, 0, 1);
+                const toDate = new Date(year, 11, 31, 23, 59, 59);
+                for (const page of allPages) {
+                    console.log("Processing page", page);
+                    for (const viewStat of page.viewStats) {
+                        console.log(`Page ${page.path} viewed on ${viewStat.day} with count ${viewStat.count}`);
+                        if (viewStat.day >= fromDate && viewStat.day <= toDate) {
+                            topPages.push({ title: page.path || 'Unknown', views: viewStat.count });
+                        }
+                    }
+                }
+
+                result.topPages.push(...topPages);
+            }
+            return result
         } catch (e) {
             return { pagesCreated: 0, topPages: [], topAuthors: [] };
         }

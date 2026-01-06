@@ -68,8 +68,8 @@ export const generateMockData = (year: number): ReviewData => {
                 merged: 850,
                 topReviewer: { displayName: 'Reviewer Rick', count: 520 },
                 discussionCount: 3420,
-                fastestMerge: { title: 'Fix typo', durationHours: 0.1 },
-                longestMerge: { title: 'Major Refactor', durationHours: 145 },
+                fastestMerge: { title: 'Fix typo', durationMinutes: 0.1 },
+                longestMerge: { title: 'Major Refactor', durationMinutes: 145 },
             },
             general: {
                 teamName: 'The Dream Team',

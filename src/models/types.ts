@@ -56,9 +56,9 @@ export interface WorkItemStats {
 export interface PRStats {
     merged: number;
     topReviewer: UserStat;
-    discussionCount: number; // Comments/threads
-    fastestMerge: { title: string; durationHours: number };
-    longestMerge: { title: string; durationHours: number };
+    discussionCount: number;
+    fastestMerge: { title: string; durationMinutes: number };
+    longestMerge: { title: string; durationMinutes: number };
 }
 
 export interface GeneralStats {
@@ -91,4 +91,3 @@ export interface SlideData {
     duration?: number; // seconds
     theme?: SlideTheme;
 }
-
