@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import type { ReviewData, SlideData } from '../../models/types';
+import { Predictions, type ReviewData, type SlideData } from '../../models/types';
 import { generateSlides } from '../../services/slide-generator';
 
 // Placeholder story components - we will expand these later
@@ -12,10 +12,11 @@ import { MessageStory } from '../Stories/MessageStory';
 
 interface PresentationPageProps {
     data: ReviewData;
+    predictions: Predictions;
     onExit: () => void;
 }
 
-export const PresentationPage: React.FC<PresentationPageProps> = ({ data, onExit }) => {
+export const PresentationPage: React.FC<PresentationPageProps> = ({ data, predictions, onExit }) => {
     const [slides, setSlides] = useState<SlideData[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isPaused, setIsPaused] = useState(false);
@@ -25,8 +26,8 @@ export const PresentationPage: React.FC<PresentationPageProps> = ({ data, onExit
     const pausedTimeRef = useRef<number>(0);
 
     useEffect(() => {
-        const generated = generateSlides(data);
-        setSlides(generated);
+        const slides = generateSlides(data, predictions);
+        setSlides(slides);
     }, [data]);
 
     // Timer logic
@@ -157,8 +158,26 @@ export const PresentationPage: React.FC<PresentationPageProps> = ({ data, onExit
             </div>
 
             {/* Navigation Tap Zones */}
-            <div className="absolute inset-y-0 left-0 w-1/3 z-40" onClick={(e) => { e.stopPropagation(); goToPrev(); }} />
-            <div className="absolute inset-y-0 right-0 w-1/3 z-40" onClick={(e) => { e.stopPropagation(); goToNext(); }} />
+            <div
+                className="absolute inset-y-0 left-0 w-1/3 z-40 flex items-center justify-start pl-4 group cursor-pointer outline-none"
+                onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+            >
+                <div className="p-3 rounded-full bg-black/20 text-white/70 group-hover:bg-black/40 group-hover:text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </div>
+            </div>
+            <div
+                className="absolute inset-y-0 right-0 w-1/3 z-40 flex items-center justify-end pr-4 group cursor-pointer outline-none"
+                onClick={(e) => { e.stopPropagation(); goToNext(); }}
+            >
+                <div className="p-3 rounded-full bg-black/20 text-white/70 group-hover:bg-black/40 group-hover:text-white transition-all opacity-0 group-hover:opacity-100 backdrop-blur-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+            </div>
 
             {/* Close Button */}
             <button

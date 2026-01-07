@@ -91,3 +91,15 @@ export interface SlideData {
     duration?: number; // seconds
     theme?: SlideTheme;
 }
+
+export class Predictions {
+    mainText: string = 'More Coffee';
+    subText: string = 'Our AI predicts 20% increase in caffeine consumption.';
+    funFacts: string[] = [
+        'The team fixed a bug while skydiving (not recommended!).',
+        'Our code was reviewed by a cat (purrfect quality!).',
+        'We had a meeting that could have been an email... but it was fun!',
+        'One developer coded an entire feature using only emojis.',
+        'The team celebrated a successful deployment with a dance-off.'
+    ];
+}

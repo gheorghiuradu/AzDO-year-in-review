@@ -1,8 +1,8 @@
-import type { ReviewData, SlideData } from '../models/types';
+import type { Predictions, ReviewData, SlideData } from '../models/types';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-export const generateSlides = (data: ReviewData): SlideData[] => {
+export const generateSlides = (data: ReviewData, predictions: Predictions): SlideData[] => {
     const slides: SlideData[] = [];
     const enabledIds = new Set(data.config?.enabledStoryIds || []);
 
@@ -427,9 +427,9 @@ export const generateSlides = (data: ReviewData): SlideData[] => {
         type: 'message',
         title: 'Prediction',
         data: {
-            title: '2026 Prediction 🔮',
-            mainText: 'More Coffee',
-            subText: 'Our AI predicts 20% increase in caffeine consumption.',
+            title: `${new Date().getFullYear() + 1} AI Prediction 🔮`,
+            mainText: predictions.mainText,
+            subText: predictions.subText,
         },
         theme: 'default'
     }));

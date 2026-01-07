@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import type { ReviewData, StoryConfig, StoryCategory } from '../../models/types';
+import { ReviewData, StoryConfig, StoryCategory, Predictions } from '../../models/types';
 import { generateMockData } from '../../services/mock-data';
 import { AVAILABLE_STORIES, CATEGORY_LABELS } from '../../models/constants';
 import { AdoService } from '../../services/ado-service';
+import { AIPredictionService } from '../../services/ai-prediction-service';
 
 interface ConfigPageProps {
-    onGenerate: (data: ReviewData) => void;
+    onGenerate: (data: ReviewData, predictions: Predictions) => void;
 }
 
 export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
@@ -44,7 +45,7 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
         setLoading(true);
         //const data = generateMockData(year);
         const data = await adoService.getReviewData(year);
-        console.log('Fetched review data:', data);
+
         // Attach config
         const finalData = {
             ...data,
@@ -53,8 +54,11 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
             }
         };
 
+        const predictions = new Predictions();
+        const aiPredictionService = new AIPredictionService(predictions, finalData);
+        await aiPredictionService.initializePredictions();
         setLoading(false);
-        onGenerate(finalData);
+        onGenerate(finalData, predictions);
     };
 
     // Group stories by category

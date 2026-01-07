@@ -1,7 +1,7 @@
 import * as SDK from 'azure-devops-extension-sdk';
 import { getClient } from 'azure-devops-extension-api';
-import { GitRestClient, GitVersionType, PullRequestStatus, PullRequestTimeRangeType, VersionControlRecursionType } from 'azure-devops-extension-api/Git';
-import type { GitCommitRef, GitPullRequest, GitPullRequestSearchCriteria, GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
+import { GitRestClient, GitVersionType, PullRequestStatus, PullRequestTimeRangeType } from 'azure-devops-extension-api/Git';
+import type { GitCommitRef, GitPullRequest, GitQueryCommitsCriteria, GitVersionDescriptor } from 'azure-devops-extension-api/Git';
 import { Build, BuildRestClient, BuildResult } from 'azure-devops-extension-api/Build';
 import { WorkItemTrackingRestClient } from 'azure-devops-extension-api/WorkItemTracking';
 import { WikiPageDetail, WikiRestClient } from 'azure-devops-extension-api/Wiki';
@@ -461,14 +461,11 @@ export class AdoService {
                     // Ignore errors fetching pages
                 }
 
-                console.log(`Fetched ${allPages.length} pages for wiki ${wiki.name}`);
                 const topPages: { title: string; views: number }[] = [];
                 const fromDate = new Date(year, 0, 1);
                 const toDate = new Date(year, 11, 31, 23, 59, 59);
                 for (const page of allPages) {
-                    console.log("Processing page", page);
                     for (const viewStat of page.viewStats) {
-                        console.log(`Page ${page.path} viewed on ${viewStat.day} with count ${viewStat.count}`);
                         if (viewStat.day >= fromDate && viewStat.day <= toDate) {
                             topPages.push({ title: page.path || 'Unknown', views: viewStat.count });
                         }
