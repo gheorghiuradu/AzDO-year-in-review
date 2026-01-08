@@ -1,7 +1,7 @@
 {
     "manifestVersion": 1,
     "id": "year-in-review",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "name": "Year in Review",
     "description": "A Spotify Wrapped-style review of your team's year in Azure DevOps",
     "publisher": "RaduGheorghiu",
@@ -11,7 +11,7 @@
         }
     ],
     "icons": {
-        "default": "dist/icon.png"
+        "default": "images/icon.png"
     },
     "categories": [
         "Azure Repos",
@@ -34,13 +34,20 @@
             "properties": {
                 "name": "Year in Review",
                 "uri": "index.html",
-                "icon": "icon.png"
+                "icon": {
+                    "light": "images/hub-icon.png",
+                    "dark": "images/hub-icon-dark.png"
+                }
             }
         }
     ],
     "files": [
         {
             "path": "dist"
+        },
+        {
+            "path": "images",
+            "addressable": true
         }
     ]
 }
