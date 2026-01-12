@@ -7,12 +7,11 @@
     "build": "webpack --mode production",
     "lint": "eslint .",
     "package:dev": "npm run build && npx tfx-cli extension create --overrides-file configs/dev.json --rev-version",
-    "publish:dev": "npm run build && source .env && npx tfx-cli extension publish --overrides-file configs/dev.json --token $PAT",
+    "publish:dev": "source .env && npx tfx-cli extension publish --overrides-file configs/dev.json --token $PAT",
     "package:release": "npm run build && npx tfx-cli extension create --overrides-file configs/release.json --rev-version",
-    "publish:release": "npm run build && source .env && npx tfx-cli extension publish --overrides-file configs/release.json --token $PAT"
+    "publish:release": "source .env && npx tfx-cli extension publish --overrides-file configs/release.json --token $PAT"
   },
   "dependencies": {
-    "@mlc-ai/web-llm": "^0.2.80",
     "azure-devops-extension-api": "^4.265.0",
     "azure-devops-extension-sdk": "^4.2.0",
     "canvas-confetti": "^1.9.4",

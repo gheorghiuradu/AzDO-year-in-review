@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ReviewData, StoryConfig, StoryCategory, Predictions } from '../../models/types';
-import { generateMockData } from '../../services/mock-data';
 import { AVAILABLE_STORIES, CATEGORY_LABELS } from '../../models/constants';
 import { AdoService } from '../../services/ado-service';
-import { AIPredictionService } from '../../services/ai-prediction-service';
 
 interface ConfigPageProps {
     onGenerate: (data: ReviewData, predictions: Predictions) => void;
@@ -19,11 +17,9 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
     const [loading, setLoading] = useState(false);
     const [stories, setStories] = useState<StoryConfig[]>(AVAILABLE_STORIES);
     const adoService = new AdoService();
-    let project: { id: string; name: string } | undefined;
 
     useEffect(() => {
         adoService.initADO().then(() => {
-            project = adoService.getProject();
         });
     }, []);
 
@@ -55,8 +51,6 @@ export const ConfigPage: React.FC<ConfigPageProps> = ({ onGenerate }) => {
         };
 
         const predictions = new Predictions();
-        const aiPredictionService = new AIPredictionService(predictions, finalData);
-        await aiPredictionService.initializePredictions();
         setLoading(false);
         onGenerate(finalData, predictions);
     };

@@ -1,7 +1,7 @@
 {
     "manifestVersion": 1,
     "id": "year-in-review",
-    "version": "0.1.6",
+    "version": "0.9.8",
     "name": "Year in Review",
     "description": "A Spotify Wrapped-style review of your team's year in Azure DevOps",
     "publisher": "RaduGheorghiu",
@@ -33,20 +33,42 @@
             ],
             "properties": {
                 "name": "Year in Review",
-                "uri": "index.html",
+                "uri": "dist/index.html",
                 "icon": {
-                    "light": "images/hub-icon.png",
+                    "light": "images/hub-icon-light.png",
                     "dark": "images/hub-icon-dark.png"
                 }
             }
         }
     ],
+    "content": {
+        "details": {
+            "path": "OVERVIEW.md"
+        },
+        "license": {
+            "path": "LICENSE.txt"
+        }
+    },
+    "links": {
+        "support": {
+            "uri": "https://github.com/gheorghiuradu/AzDO-year-in-review/issues"
+        }
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/gheorghiuradu/AzDO-year-in-review"
+    },
     "files": [
         {
-            "path": "dist"
+            "path": "dist",
+            "addressable": true
         },
         {
             "path": "images",
+            "addressable": true
+        },
+        {
+            "path": "screenshots",
             "addressable": true
         }
     ]
